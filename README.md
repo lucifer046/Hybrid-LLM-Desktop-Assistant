@@ -17,7 +17,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 The **Hybrid LLM AI Assistant** is a sophisticated desktop application designed to emulate the capabilities of advanced assistants like JARVIS. Unlike standard chatbots, this system integrates deeply with your operating system, allowing it to perform real-world tasks, browse the web, and generate multimedia content.
 
@@ -29,19 +29,19 @@ It leverages a **Hybrid Architecture**:
 
 ---
 
-## 🚀 Features
+## Features
 
-### 🧠 Intelligent Core
+### Intelligent Core
 
 - **Multimodal Logic**: Intelligently routes queries to the best tool (General Chat, Real-Time Search, or Automation).
 - **Hybrid Model Support**: Seamlessly switches between Gemini, Cohere, and Local LLMs (Llama/Mistral).
 
-### 🗣️ Natural Interaction
+### Natural Interaction
 
 - **Voice-First Interface**: High-accuracy **Speech-to-Text** (using Chrome Web Speech API) and natural **Text-to-Speech** (Microsoft Edge Neural Voices).
 - **Wake Word Detection**: Always-listening capability (optional).
 
-### ⚡ Automation & Tools
+### Automation & Tools
 
 | Feature          | Description                                                                                       |
 | :--------------- | :------------------------------------------------------------------------------------------------ |
@@ -50,14 +50,14 @@ It leverages a **Hybrid Architecture**:
 | **Web Browsing** | Automates Google & YouTube searches. Scrapes live data for questions like "Stock price of Apple". |
 | **Image Gen**    | Create AI art instantly using Pollinations.ai (Free) or Stable Diffusion.                         |
 
-### 🎨 Modern GUI
+### Modern GUI
 
 - **Futuristic UI**: Built with **PyQt5**, featuring a dynamic listening interface and chat bubbles.
 - **Visual Feedback**: Real-time status indicators ("Listening", "Thinking", "Processing").
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 
@@ -89,7 +89,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🔑 Configuration (Env Setup)
+## Configuration (Environmental Setup)
 
 To run this assistant, you must configure a `.env` file with your API keys. This is critical for the AI "Brain" to function.
 
@@ -136,8 +136,8 @@ CohereAPIKey=46ans2LAGxxxx...
 HF_TOKEN=hf_CaQepxxxx...
 
 # USER PREFERENCES
-Username=Divy
-AssistantName=Lucifer
+Username=User
+AssistantName=Jarvis
 Language=English
 INPUT_LANGUAGE=en
 AssistantVoice=en-IN-PrabhatNeural
@@ -148,7 +148,7 @@ Run the application. If you see authentication errors, double-check that you cop
 
 ---
 
-## 💻 Usage
+## Usage
 
 Run the main application entry point:
 
@@ -156,7 +156,7 @@ Run the main application entry point:
 python Main.py
 ```
 
-### 🎙️ Example Commands
+### Example Commands
 
 - **Productivity**: _"Open Notepad and write a python script for a calculator."_
 - **Information**: _"Who won the last Super Bowl?"_
@@ -166,7 +166,7 @@ python Main.py
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 The system operates using a multi-threaded architecture to ensure the GUI remains responsive while heavy AI processing happens in the background.
 
@@ -191,7 +191,7 @@ graph TD
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```bash
 ├── Backend/                # 🧠 The Brain
@@ -211,14 +211,14 @@ graph TD
 
 ---
 
-## 🔒 Security Note
+## Security Note
 
 - **API Keys**: Your API keys are stored locally in `.env`. **Never** upload this file to GitHub.
 - **Local Processing**: Automation scripts run with user privileges. Review the code in `Automation.py` if you intend to modify system commands.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
@@ -230,18 +230,18 @@ Contributions are what make the open-source community such an amazing place to l
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This system is designed to automate tasks and control your computer. While secure by design, **the developer is not responsible for any data loss, system damage, or unintended actions** resulting from the use of this software. Users are advised to review the code (specifically `Automation.py`) before running potentially destructive commands.
 
 ---
 
-## 📄 License
+## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/your-username">Lucifer</a></sub>
+  <sub>Built with ❤️ by <a href="https://github.com/your-username">Hybrid-LLM-Assistant</a></sub>
 </div>
