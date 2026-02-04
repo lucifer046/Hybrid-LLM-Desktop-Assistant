@@ -64,6 +64,7 @@ It leverages a **Hybrid Architecture**:
 - **OS**: Windows 10/11
 - **Python**: v3.10 or newer
 - **Browser**: Google Chrome (Required for Speech Recognition backend)
+- **LM Studio**: Required for Local LLM operations.
 
 ### 1. Clone Repository
 
@@ -86,6 +87,28 @@ python -m venv .venv
 ```bash
 pip install -r requirements.txt
 ```
+
+### 4. Setup Local LLM (Mandatory)
+
+The project requires a local LLM running via **LM Studio** by default for tasks like content generation and privacy-focused operations.
+
+1.  **Download & Install**: [LM Studio](https://lmstudio.ai/)
+2.  **Download a Model**: Search for and download a lightweight model (e.g., `Meta-Llama-3-8B-Instruct` or `Mistral-7B`).
+3.  **Start Server**:
+    - Go to the "Local Server" tab (double-headed arrow icon).
+    - **Load** your downloaded model.
+    - Click **Start Server**.
+    - Ensure the URL is `http://localhost:1234`.
+
+### Why Local LLM? (Important)
+
+This project uses a **Hybrid Architecture** where cloud models handle complex logic (reasoning, routing), but **Private Content Generation** is handled locally.
+
+- **Privacy**: When you ask the assistant to write an email, code, or personal note, that data is processed **entirely on your machine**. It never leaves your network.
+- **Cost**: Cloud APIs charge per token. By offloading heavy text generation tasks to your local GPU/CPU, you save significantly on API costs.
+- **Offline Capability**: Essential features remain functional even without an internet connection.
+
+> **Note**: If you cannot run a local model due to hardware limitations, you will need to modify `Backend/Automation.py` to use OpenAI/Gemini APIs for the `Content()` function instead.
 
 ---
 
