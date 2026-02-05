@@ -14,16 +14,16 @@
 # - It's more accurate than offline libraries like `SpeechRecognition` (CMU Sphinx).
 # - It supports many languages out of the box.
 
-from dotenv import dotenv_values
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from rich.console import Console
-import os   
-import mtranslate as mt
-import time
+from dotenv import dotenv_values # Import dotenv_values to load environment variables.
+from selenium import webdriver # Import webdriver to control the browser.
+from selenium.webdriver.common.by import By # Import By to locate elements in the DOM.
+from selenium.webdriver.chrome.options import Options # Import Options to configure Chrome settings.
+from selenium.webdriver.support.ui import WebDriverWait # Import WebDriverWait to wait for elements.
+from selenium.webdriver.support import expected_conditions as EC # Import expected_conditions to check element states.
+from rich.console import Console # Import Console for rich terminal output.
+import os # Import os for file path operations.   
+import mtranslate as mt # Import mtranslate for language translation.
+import time # Import time for delays.
 
 # -------------------------------------------------------------------------------------------------------
 #                                         Configuration
@@ -158,7 +158,7 @@ def UniversalTranslator(query):
     Translates non-English input to English using mtranslate.
     This allows the logic in Main.py to always work with English commands.
     """
-    english_query = mt.translate(query, "auto", "en")
+    english_query = mt.translate(query, "en", "auto")
     return english_query.capitalize()
 
 # -------------------------------------------------------------------------------------------------------
@@ -191,13 +191,9 @@ def SpeechRecognition():
                 # Stop speech recognition
                 driver.find_element(By.ID, "end").click()
                 
-                # Check Language Logic
-                if input_language.lower().startswith("en"):
-                    return QueryModifier(Text)
-                else:
-                    # If foreign language, translate first
-                    SetAssistantStatus("Translating...")
-                    return QueryModifier(UniversalTranslator(Text))
+                # Always translate to English
+                SetAssistantStatus("Translating...")
+                return QueryModifier(UniversalTranslator(Text))
             
             time.sleep(0.2) # Prevent CPU spiking
 

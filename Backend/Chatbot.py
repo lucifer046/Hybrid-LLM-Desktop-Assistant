@@ -67,48 +67,55 @@ def AnswerModifier(Answer):
 
 def load_memory():
     """
-    Loads conversation history from the primary JSON file.
-    Falls back to the backup file if the primary file is missing or corrupted.
+    Loads conversation history from the 'Data/conversation.json' file.
+    
+    Why this is needed:
+    - This allows the chatbot to 'remember' past conversations even after a restart.
+    - We use a primary file and a backup file to prevent data loss.
     
     Returns:
-        list: A list of message dictionaries, or an empty list if no data is found.
+        list: A list of message dictionaries (e.g., [{'role': 'user', 'content': 'hi'}]).
     """
-    # Ensure the Data directory exists
+    # Ensure the Data directory exists to avoid FileNotFoundError
     if not os.path.exists("Data"):
         os.makedirs("Data")
     
     try:
-        # Try loading from the primary file
+        # Priority 1: Try loading from the primary conversation file
         with open(DB_FILE, "r") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        # Fallback to backup if primary fails
+        # Priority 2: Fallback to backup file if primary is missing or corrupted
         try:
             with open(BACKUP_FILE, "r") as f:
                 data = json.load(f)
-            console.print("[yellow]⚠ Main memory corrupted. Loaded from Backup.[/yellow]")
+            console.print("[yellow]⚠ Main memory corrupted. Loaded from Backup safely.[/yellow]")
             return data
         except:
-            # Return empty list if both fail
+            # Fallback 3: Return empty list if no valid memory found (New conversation)
             return []
 
 def save_memory(memory_list):
     """
-    Saves the conversation history to the JSON file.
-    Uses a write-backup-first strategy to prevent data loss during write errors.
+    Saves the current conversation history to the JSON file.
+    
+    Safety Strategy (Write-Backup-First):
+    1. Write data to 'conversation_backup.json' first.
+    2. Then copy it to 'conversation.json'.
+    This ensures that if the program crashes *while* writing, we still have a valid file.
     
     Args:
-        memory_list (list): The list of messages to save.
+        memory_list (list): The complete history of messages to save.
         
     Returns:
-        bool: True if successful, False otherwise.
+        bool: True if save was successful, False if an error occurred.
     """
     try:
-        # Write to backup file first
+        # Step 1: Write to backup file
         with open(BACKUP_FILE, "w") as f:
             json.dump(memory_list, f, indent=4)
         
-        # Copy backup to primary file
+        # Step 2: Copy backup to primary file (Atomic-like operation)
         shutil.copy(BACKUP_FILE, DB_FILE)
         return True
     except Exception as e:
@@ -120,11 +127,11 @@ def save_memory(memory_list):
 # -------------------------------------------------------------------------------------------------------
 
 # Initialize memory stores
-permanent_memory = load_memory()
-session_memory = []  # Stores messages for the current session only (RAM only)
+permanent_memory = load_memory() # Load long-term history from disk.
+session_memory = []  # Stores messages for the *current* run only (RAM). cleared on restart.
 
 # System prompt definition
-# Defines the assistant's persona, language constraints, and behavior
+# This is the "Persona" of the AI. It tells the LLM who it is and how to behave.
 system_message = f"""Hello, I am {username}. You are a very accurate and advanced AI chatbot named {assistant_name} which has real-time up-to-date information from the internet.
 *** Do not tell time until I ask, do not talk too much, just answer the question.***
 *** Reply ONLY in {language}. Even if the question is in another language, translate and reply in {language}.***
@@ -135,8 +142,11 @@ system_message = f"""Hello, I am {username}. You are a very accurate and advance
 
 def RealTimeInformation():
     """
-    Generates a string containing the current time and date.
-    Used to provide temporal context to the model so it knows 'today'.
+    Generates a string containing the current dynamic time and date.
+    
+    Why:
+    - LLMs are static (trained on old data). They don't know "today's date".
+    - We inject this string into the System Prompt so the AI knows exactly when it is.
     """
     current_date_time = datetime.datetime.now()
     data = f"Current Time: {current_date_time.strftime('%I:%M %p')}\n"

@@ -33,22 +33,27 @@ It leverages a **Hybrid Architecture**:
 
 ### Intelligent Core
 
-- **Multimodal Logic**: Intelligently routes queries to the best tool (General Chat, Real-Time Search, or Automation).
-- **Hybrid Model Support**: Seamlessly switches between Gemini, Cohere, and Local LLMs (Llama/Mistral).
+- **Dual-Mode Logic**:
+  - **Local Mode (Default)**: Runs entirely on your machine using Llama 3 or Mistral (via LM Studio). No data leaves your network.
+  - **Cloud Mode (Optional)**: Can be configured to use Google Gemini or Cohere for complex tasks requiring massive world knowledge.
+- **Multimodal Routing**: Intelligently switches between General Chat, Real-Time Web Search, and Automation based on user intent.
+- **Emotion Detection**: Detects user sentiment (e.g., Happy, Curious, Urgent) to adjust the assistant's personality dynamically.
 
 ### Natural Interaction
 
 - **Voice-First Interface**: High-accuracy **Speech-to-Text** (using Chrome Web Speech API) and natural **Text-to-Speech** (Microsoft Edge Neural Voices).
 - **Wake Word Detection**: Always-listening capability (optional).
+- **Universal Translation**: Automatically translates all voice inputs to English for consistent processing.
 
 ### Automation & Tools
 
-| Feature          | Description                                                                                       |
-| :--------------- | :------------------------------------------------------------------------------------------------ |
-| **App Control**  | "Open Spotify", "Close Visual Studio Code"                                                        |
-| **System Ops**   | "Mute volume", "Lock screen", "Shutdown PC"                                                       |
-| **Web Browsing** | Automates Google & YouTube searches. Scrapes live data for questions like "Stock price of Apple". |
-| **Image Gen**    | Create AI art instantly using Pollinations.ai (Free) or Stable Diffusion.                         |
+| Feature          | Description                                                                                              |
+| :--------------- | :------------------------------------------------------------------------------------------------------- |
+| **App Control**  | "Open specific apps" (e.g. "Open File Explorer", "Open Chrome") using strict Windows naming conventions. |
+| **System Ops**   | "Mute volume", "Lock screen", "Shutdown PC", "Brightness Control"                                        |
+| **Web Browsing** | Automates Google & YouTube searches. Scrapes live data for questions like "Stock price of Apple".        |
+| **Image Gen**    | Create AI art instantly using Pollinations.ai (Free) or Stable Diffusion.                                |
+| **Content Gen**  | Write emails, code, and essays privately using your Local LLM.                                           |
 
 ### Modern GUI
 
@@ -88,12 +93,12 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 4. Setup Local LLM (Mandatory)
+### 4. Setup Local LLM (Default & Recommended)
 
 The project requires a local LLM running via **LM Studio** by default for tasks like content generation and privacy-focused operations.
 
 1.  **Download & Install**: [LM Studio](https://lmstudio.ai/)
-2.  **Download a Model**: Search for and download a lightweight model (e.g., `Meta-Llama-3-8B-Instruct` or `Mistral-7B`).
+2.  **Download a Model**: Search for and download a lightweight, instruction-tuned model (e.g., `Meta-Llama-3-8B-Instruct` or `Mistral-7B`).
 3.  **Start Server**:
     - Go to the "Local Server" tab (double-headed arrow icon).
     - **Load** your downloaded model.
@@ -127,7 +132,23 @@ The assistant relies on Cloud APIs (Google Gemini, Cohere) for its intelligence.
 - Locate the file named `.env.example` in the root directory.
 - Rename it to `.env` (or create a new file named `.env`).
 
-**2. Get Your Keys**
+**2. Configure Keys**
+
+**A. User Preferences (Required)**
+These settings customize the assistant for you.
+
+```ini
+Username=User
+AssistantName=Jarvis
+Language=English
+INPUT_LANGUAGE=en
+AssistantVoice=en-IN-PrabhatNeural
+```
+
+**B. Cloud API Keys (Optional)**
+_Only fill these if you intend to switch the backend to use Cloud Models (Gemini/Cohere) instead of Local LLM._
+
+```ini
 You need to sign up for free API keys from the following providers:
 
 - **Gemini API Key** (for Decision Making & Chat):
@@ -143,27 +164,6 @@ You need to sign up for free API keys from the following providers:
 - **Hugging Face Token** (for Image Generation fallback):
   - **Go to**: [Hugging Face Settings](https://huggingface.co/settings/tokens)
   - **Action**: Create a "Read" token.
-
-**3. Fill in the `.env` File**
-Open your `.env` file in a text editor (Notepad, VS Code) and paste your keys:
-
-```ini
-# PRIMARY AI MODEL (Required)
-GeminiAPIKey=AIzaSyDxxxx...
-GeminiModel=models/gemini-2.5-flash
-
-# SECONDARY AI MODEL (Optional but recommended)
-CohereAPIKey=46ans2LAGxxxx...
-
-# IMAGE GENERATION (Start with this for fallback)
-HF_TOKEN=hf_CaQepxxxx...
-
-# USER PREFERENCES
-Username=User
-AssistantName=Jarvis
-Language=English
-INPUT_LANGUAGE=en
-AssistantVoice=en-IN-PrabhatNeural
 ```
 
 **4. Verify**

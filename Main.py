@@ -59,7 +59,8 @@ DefaultMessage = f"""{Username} : Hello {Assistantname}, How are you?
 {Assistantname} : Welcome {Username}. I am doing well. How may I help you?"""
 
 # Keyword list for automation decisions
-functions = ["open", "close", "play", "system", "content", "google search", "youtube search"]
+functions = ["open", "close", "play", "system", "content", "google search", "youtube search", 
+             "volume", "mute", "unmute", "brightness", "lock", "shutdown", "restart", "turn"]
 
 # Track subprocesses (like Image Generation)
 subprocess_list = []
@@ -202,8 +203,18 @@ def MainExecution():
             if not TaskExecution:
                 if any(queries.startswith(func) for func in functions):
                     # Call Automation Module (Async)
-                    run(Automation(list(Decision)))
-                    TaskExecution = True
+                    try:
+                        # Clean up punctuation from AI response (e.g. "open settings." -> "open settings")
+                        clean_query = queries.rstrip(".").strip()
+                        print(f"Dividing Task: Executing Automation for {clean_query}")
+                        # Use threading to run automation instead of asyncio.run() to avoid EventLoop conflicts with PyQt
+                        import threading
+                        t = threading.Thread(target=lambda: run(Automation([clean_query])))
+                        t.start()
+                        t.join() # Wait for automation to complete cleanly
+                        TaskExecution = True
+                    except Exception as e:
+                        print(f"Error executing automation: {e}")
 
         # 4. IMAGE GENERATION EXECUTION
         # If image gen was triggered, we spawn an external python process to handle it

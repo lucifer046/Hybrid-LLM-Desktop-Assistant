@@ -50,23 +50,28 @@ BACKUP_FILE = r"Data\conversation_backup.json"
 
 def GoogleSearch(query):
     """
-    Performs a real-time web search using DuckDuckGo.
-    This fetches 'Max Results' snippets to provide context to the LLM.
+    Performs a real-time web search using the DuckDuckGo API.
+    
+    Why:
+    - LLMs have a "knowledge cutoff" and don't know recent events (like today's news).
+    - We search the web to get raw text snippets about the user's query.
+    - These snippets are then fed to the LLM to summarize.
     
     Args:
-        query (str): The search query.
+        query (str): The user's search term (e.g., "price of bitcoin").
         
     Returns:
-        str: A formatted string containing search results, or None if no results found.
+        str: A structured string of search results (Title + Description + Link), or None.
     """
     try:
-        # Perform search with a limit of 5 results
+        # Perform search using ddgs library, limiting to top 5 results to save tokens.
         results = DDGS().text(query, max_results=5)
         
         if not results:
             return None
 
-        # Format results into a readable string for the LLM
+        # Format results into a single string for the Prompt.
+        # We use [start] and [end] tags to help the LLM distinguish search data from instructions.
         Answer = f"The search results for '{query}' are:\n[start]\n"
         for i in results:
             Answer += f"Title: {i['title']}\nDescription: {i['body']}\nLink: {i['href']}\n\n"

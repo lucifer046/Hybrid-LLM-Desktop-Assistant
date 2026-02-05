@@ -12,36 +12,41 @@
 # - Content Generation: Writing text to files (using Local LLM).
 # - Async Execution: Capable of running multiple commands in parallel.
 
-from AppOpener import close, open as appopen # Import AppOpener module to open/close applications. 
-from webbrowser import open as webopen # Import webbrowser module to open web pages. 
-from pywhatkit import search, playonyt # Import pywhatkit module to search and play YouTube videos. 
-from dotenv import dotenv_values # Import dotenv module to load environment variables. 
-from bs4 import BeautifulSoup # Import BeautifulSoup module to parse HTML content. 
-from rich import print # Import rich module to print formatted text. 
-from openai import OpenAI # Import OpenAI module to interact with OpenAI API or Local LM Studio server. 
-import webbrowser # Import webbrowser module to open web pages. 
-import subprocess # Import subprocess module to run system commands. 
-import requests # Import requests module to make HTTP requests. 
-import keyboard # Import keyboard module to simulate keyboard events. 
-import asyncio # Import asyncio module to handle asynchronous operations. 
-import tempfile # Import tempfile module to create temporary files. 
-import os # Import os module to interact with the operating system. 
+from AppOpener import close, open as appopen # Import AppOpener to control desktop applications (Open/Close).
+from webbrowser import open as webopen # Import webbrowser to open URLs in the default browser.
+from pywhatkit import search, playonyt # Import pywhatkit for performing Google Searches and playing YouTube videos.
+from dotenv import dotenv_values # Import dotenv_values to securely load sensitive variables from the .env file.
+from bs4 import BeautifulSoup # Import BeautifulSoup for parsing HTML content (Web Scraping).
+from rich import print # Import rich's print function for beautiful, colored terminal output.
+from openai import OpenAI # Import OpenAI client to interact with the Local LLM (LM Studio).
+import webbrowser # Standard library for web browsing.
+import subprocess # Standard library for executing system commands (like 'shutdown', 'taskkill').
+import requests # Standard library for making HTTP requests (GET/POST).
+import keyboard # Library to simulate keyboard key presses (shortcuts).
+import asyncio # Standard library for writing concurrent code using the async/await syntax.
+import tempfile # Standard library to create temporary files (used for LLM content generation).
+import os # Standard library for Operating System interactions (file paths, system checks).
+import ctypes # Standard library to call low-level Windows API functions (e.g., locking the screen).
+import platform # Standard library to detect the underlying OS (Windows, Linux, Mac).
 
 # -------------------------------------------------------------------------------------------------------
 #                                         Configuration
 # -------------------------------------------------------------------------------------------------------
 
-# Load environment variables from .env file. 
+# Load environment variables from the .env file (e.g., API keys, settings).
 env_vars = dotenv_values(".env")
 
-# Initialize OpenAI client for local LM Studio server
-# This is used specifically for the 'Content' generation command.
+# Initialize the OpenAI Client for the Local LLM (LM Studio).
+# This client is used primarily for the 'Content' generation feature,
+# where the AI writes essays, emails, or code for the user.
 client = OpenAI(
-    base_url="http://localhost:1234/v1", 
-    api_key="lm-studio"
+    base_url="http://localhost:1234/v1", # The local URL where LM Studio is running.
+    api_key="lm-studio" # A placeholder key since we are running locally.
 )
 
-# CSS classes used for parsing Google Search results (HTML scraping).
+# List of CSS classes used to scrape Google Search results.
+# These classes are specific to Google's HTML structure and are used to extract
+# the "Quick Answer" or "Featured Snippet" text from the search results page.
 CSS_CLASSES = [
     "ZCubwf",
     "hgKElc",
@@ -169,11 +174,16 @@ def OpenApp(app, sess=requests.Session()):
     - Fallback logic: If app not found, searches Google for a link and opens it.
     """
     try: 
+        # Explicit handling for File Explorer (AppOpener often misses this)
+        if app in ["file explorer", "file manager", "my computer", "this pc", "explorer"]:
+            os.startfile("explorer")
+            return True
+
         appopen(app, match_closest=True, output=True, throw_error=True) # Attempt to open the app. 
         return True # Indicate successful execution. 
     
     except:
-        # Fallback: Web Search logic
+        # Fallback: Web Search logic to open via Chrome
         
         # Nested function to extract links from the HTML content. 
         def extract_link(html):
@@ -197,76 +207,234 @@ def OpenApp(app, sess=requests.Session()):
             else:
                 print(f"Failed to retrieve HTML content. Status code: {response.status_code}") # Print the status code. 
                 return None # Return None if the request failed. 
-                
+        
+        # Helper to open URL in Chrome safely using exact paths
+        def open_in_chrome(url):
+            try:
+                system = platform.system()
+                if system == "Windows":
+                    # Common Chrome paths on Windows
+                    chrome_paths = [
+                        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                        os.path.expanduser(r"~\AppData\Local\Google\Chrome\Application\chrome.exe")
+                    ]
+                    for path in chrome_paths:
+                        if os.path.exists(path):
+                            subprocess.run([path, url])
+                            return True
+                    # Fallback to 'start chrome'
+                    subprocess.run(f'start chrome "{url}"', shell=True)
+                    return True
+                else:
+                    webbrowser.open(url)
+                    return True
+            except Exception as e:
+                print(f"Error opening Chrome: {e}")
+                webbrowser.open(url)
+                return True
+
         html = google_search(app) # Perform Google Search and retrieve HTML. 
 
         if html:
             link = extract_link(html) # Extract links from the HTML content. 
             if link:
-                webbrowser.open(link[0]) # Open the link in the default browser. 
-                return True # Indicate successful execution. 
+                open_in_chrome(link[0]) # Open the link in Chrome. 
+                return True 
             else:
-                print("No links found in the HTML content.") # Print a message if no links are found. 
-                return False # Indicate failure. 
+                open_in_chrome(f"https://www.google.com/search?q={app}")
+                return True
+        else:
+            open_in_chrome(f"https://www.google.com/search?q={app}")
+            return True 
     
 def CloseApp(app):
     """
     Closes a running application.
+    Prioritizes closing safe windows via WM_CLOSE message.
+    For browsers, it attemps to close strictly the matched tab (Ctrl+W) unless the user explicitly asks to close the browser.
     """
-    if "chrome" in app:
-        pass # skip if the app is chrome (safety measure). 
-    else:
+    app = app.lower().strip()
+
+    # Safety Check: Handle File Explorer specifically
+    if "file explorer" in app or "explorer" == app:
         try:
-            close(app, match_closest=True, output=True, throw_error=True) # Attempt to close the app. 
-            return True # Indicate successful execution. 
+            # Use PowerShell to safely close only open Explorer windows
+            cmd = "powershell -Command \"(New-Object -ComObject Shell.Application).Windows() | ForEach-Object { $_.Quit() }\""
+            subprocess.run(cmd, shell=True)
+            print("Closed all File Explorer windows.")
+            return True
+        except Exception as e:
+            print(f"Error closing File Explorer: {e}")
+            return False
+
+    # Special handling for UWP apps that act stubborn (Settings, Store, etc.)
+    if "settings" in app:
+        try:
+            subprocess.run("taskkill /f /im SystemSettings.exe", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+            print("Closed Settings.")
+            return True
         except:
-            print(f"Failed to close {app}") # Print a message if the app fails to close. 
-            return False # Indicate failure. 
+             pass
+             
+    if "store" in app or "calculator" in app:
+         # Rely on window title matching below, but ensuring they aren't blocked by critical process checks later
+         pass
+
+    # Logic: Search for visible windows matching the app name
+    try:
+        import time
+        import keyboard
+        from ctypes import windll, create_unicode_buffer
+        
+        WM_CLOSE = 0x0010
+        found_windows = []
+
+        def enum_windows_callback(hwnd, _):
+            if windll.user32.IsWindowVisible(hwnd):
+                length = windll.user32.GetWindowTextLengthW(hwnd)
+                buf = create_unicode_buffer(length + 1)
+                windll.user32.GetWindowTextW(hwnd, buf, length + 1)
+                title = buf.value.lower()
+                
+                if app in title:
+                    found_windows.append(hwnd)
+            return True
+
+        CMPFUNC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
+        windll.user32.EnumWindows(CMPFUNC(enum_windows_callback), 0)
+
+        if found_windows:
+            print(f"Found {len(found_windows)} window(s) matching '{app}'. Closing...")
+            for hwnd in found_windows:
+                # 1. Identify if it's a browser window
+                length = windll.user32.GetWindowTextLengthW(hwnd)
+                buf = create_unicode_buffer(length + 1)
+                windll.user32.GetWindowTextW(hwnd, buf, length + 1)
+                title = buf.value.lower()
+                
+                is_browser = any(b in title for b in ["chrome", "edge", "firefox", "brave", "opera"])
+                
+                # 2. Decide: Close Window vs Close Tab
+                # If it is a browser AND the user did NOT explicitly ask to close the browser itself -> Close Tab
+                # e.g. app="youtube", title="youtube - chrome" -> Close Tab
+                # e.g. app="chrome", title="youtube - chrome" -> Close Window
+                if is_browser and "chrome" not in app and "edge" not in app and "firefox" not in app and "browser" not in app:
+                    print(f"Closing browser tab for: {title}")
+                    try:
+                        windll.user32.ShowWindow(hwnd, 9) # SW_RESTORE
+                        windll.user32.SetForegroundWindow(hwnd)
+                        time.sleep(0.5) # Wait for focus
+                        keyboard.press_and_release("ctrl+w")
+                    except Exception as e:
+                        print(f"Failed to close tab: {e}")
+                else:
+                    # Generic Safe Close (simulates 'X' button)
+                    print(f"Closing window: {title}")
+                    windll.user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
+            return True
+        else:
+            print(f"No running window found for '{app}'.")
+
+    except Exception as e:
+        print(f"Error in window closing logic: {e}")
+
+    # Fallback: Force Kill (Last Resort) - ONLY for non-critical apps
+    try:
+        critical_processes = ["explorer", "winlogon", "services", "csrss", "lsass", "smss", "svchost", "dwm", "chrome", "firefox", "msedge", "lockapp", "searchui", "python", "py"]
+        
+        if app in critical_processes:
+            print(f"Safety Protocol: Execution blocked. Cannot force kill critical/protected process '{app}'.")
+            return False
+        
+        if app.endswith(".exe"):
+             subprocess.run(f"taskkill /f /im {app}", shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+             return True
+
+        return False
+    except:
+        return False 
 
 def ExecuteCommand(command):
     """
     Executes system-level commands using keyboard shortcuts.
-    Supports: Volume controls, Mute, Shutdown, Restart, Lock.
+    Supports: Volume controls, Mute, Shutdown, Restart, Lock, Brightness.
     """
     
     # Nested functions for specific actions
     def mute():
-        keyboard.press_and_release(" volume mute")
+        keyboard.press_and_release("volume mute")
 
     def unmute():
-        keyboard.press_and_release(" volume mute")
+        keyboard.press_and_release("volume mute")
     
     def increase_volume():
-        keyboard.press_and_release(" volume up")
+        # Press multiple times for noticeable change
+        for _ in range(5):
+            keyboard.press_and_release("volume up")
     
     def decrease_volume():
-        keyboard.press_and_release(" volume down")
+        for _ in range(5):
+            keyboard.press_and_release("volume down")
     
     def turn_off():
-        keyboard.press_and_release(" sleep")
+        # Sleep/Hibernate command
+        os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
     
     def turn_on():
-        keyboard.press_and_release(" sleep")
+        pass # Not applicable for software command
 
     def lock():
-        keyboard.press_and_release(" lock")
+        # Lock workstation
+        ctypes.windll.user32.LockWorkStation()
 
     def shutdown():
-        keyboard.press_and_release(" shutdown")
+        os.system("shutdown /s /t 0")
 
     def restart():
-        keyboard.press_and_release(" restart")
+        os.system("shutdown /r /t 0")
+
+    def adjust_brightness(change):
+        """Adjusts screen brightness using PowerShell/WMI."""
+        try:
+            # Get current brightness
+            cmd_get = 'powershell -Command "(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightness).CurrentBrightness"'
+            result = subprocess.run(cmd_get, capture_output=True, text=True, shell=True)
+            if not result.stdout.strip():
+                print("Could not retrieve current brightness.")
+                return
+            
+            try:
+                current_brightness = int(result.stdout.strip())
+            except ValueError:
+                print("Invalid brightness value returned.")
+                return
+
+            # Calculate new brightness (clamped between 0 and 100)
+            new_brightness = max(0, min(100, current_brightness + change))
+            
+            # Set new brightness
+            cmd_set = f'powershell -Command "(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, {new_brightness})"'
+            subprocess.run(cmd_set, shell=True)
+            print(f"Brightness set to {new_brightness}%")
+            
+        except Exception as e:
+            print(f"Error adjusting brightness: {e}")
 
     # Command Router
     if "mute" in command:
         mute()
     elif "unmute" in command:
         unmute()
-    elif "increase volume" in command:
+    elif "increase volume" in command or "volume up" in command:
         increase_volume()
-    elif "decrease volume" in command:
+    elif "decrease volume" in command or "volume down" in command:
         decrease_volume()
-    elif "turn off" in command:
+    elif "increase brightness" in command or "brightness up" in command:
+        adjust_brightness(10)
+    elif "decrease brightness" in command or "brightness down" in command:
+        adjust_brightness(-10)
+    elif "turn off" in command or "sleep" in command:
         turn_off()
     elif "turn on" in command:
         turn_on()
@@ -293,6 +461,7 @@ async def translate_and_execute(commands: list[str]):
     funcs = [] # List to store asynchronous tasks.
 
     for command in commands:
+        command = command.lower() # Normalize command to lowercase
         if command.startswith("open "): # Handle "open" command.
             if "open it" in command:
                 pass # Skip context-dependent "it" commands. 
@@ -329,6 +498,11 @@ async def translate_and_execute(commands: list[str]):
             fun = asyncio.to_thread(ExecuteCommand, command.removeprefix("system ")) # Use ExecuteCommand
             funcs.append(fun) 
 
+        # New: Direct handling for system commands without "system" prefix
+        elif any(k in command for k in ["volume", "brightness", "mute", "unmute", "lock", "shutdown", "restart", "turn off", "sleep"]):
+             fun = asyncio.to_thread(ExecuteCommand, command)
+             funcs.append(fun) 
+
         else:
             print(f"Unknown command: {command}") 
             
@@ -355,7 +529,29 @@ async def Automation(commands: list[str]):
 # -------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import asyncio
-    while True:
-        command = input("Enter command: ")
-        asyncio.run(Automation([command]))
+    async def main():
+        print("Automation Script Started. Type 'exit' to quit.")
+        while True:
+            try:
+                # Use to_thread to prevent input() from blocking the event loop entirely
+                command = await asyncio.to_thread(input, "Enter command: ")
+                
+                if not command:
+                    continue
+                    
+                if command.lower() in ["exit", "quit"]:
+                    print("Exiting...")
+                    break
+
+                await Automation([command])
+                
+            except KeyboardInterrupt:
+                print("\nStopping...")
+                break
+            except Exception as e:
+                print(f"Error executing command: {e}")
+
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"Fatal Error: {e}")
