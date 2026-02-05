@@ -24,11 +24,21 @@ from Frontend.GUI import (
     GetAssistantStatus,     # Reads current AI status
 )
 
-# Backend Modules (The "Brain" and "Tools" of the AI)
-# from Backend.Cohere_Model import FirstLayerDMM          # Decision Making: Classifies query (General, Realtime, Automation, etc.)
-# from Backend.Gemini_Model import FirstLayerDMM          # Decision Making: Classifies query (General, Realtime, Automation, etc.)
-from Backend.brain_model import FirstLayerDMM          # Decision Making: Classifies query (General, Realtime, Automation, etc.)
-# There are 3 models for decision making, choose one and comment the rest. I have chosen brain_model as it is completely loclly hosted and does not require any api key.
+# ===========================================================================================================
+#                                         Decision Model Selection
+# ===========================================================================================================
+# SELECT ONE MODEL: Uncomment the line you want to use for the AI's "Brain" (Decision Making).
+# Comment out the others.
+# -----------------------------------------------------------------------------------------------------------
+
+# Option 1: Cohere (Cloud API) - Requires API Key
+# from Backend.Cohere_Model import FirstLayerDMM
+
+# Option 2: Gemini (Cloud API) - Requires API Key
+# from Backend.Gemini_Model import FirstLayerDMM
+
+# Option 3: Local LLM (LM Studio) - Private, Free, No API Key needed (Recommended)
+from Backend.brain_model import FirstLayerDMM
 
 from Backend.RealTimeSearchEngine import RealTimeSearchEngine # DuckDuckGo Search integration
 from Backend.Automation import Automation               # OS Automation (Opening apps, etc.)
