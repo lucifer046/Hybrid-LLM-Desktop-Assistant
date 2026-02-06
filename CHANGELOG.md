@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.2] - 2026-02-06
+
+### 🛠️ Stability & Error Handling
+
+- **Robust File I/O**: Fixed critical `FileNotFoundError` crashes in `GUI.py` related to `Status.data` and `Mic.data` by implementing automatic fallback file creation and safer read operations.
+- **Thread Safety**: Resolved `KeyboardInterrupt` hangs in `Main.py` by setting the background logic thread (`FirstThread`) to run as a daemon, ensuring clean exits when the GUI is closed.
+- **Dependency Management**: Updated `requirements.txt` to include `google-genai` and other missing dependencies for a smoother setup.
+
 ## [v1.0.1] - 2026-02-05
 
 ### 🚀 New Features

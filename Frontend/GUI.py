@@ -25,6 +25,10 @@ old_chat_message = ""
 TempDirPath = rf"{current_dir}\Frontend\Files"       # Folder for data transfer (.data files)
 GraphicsDirPath = rf"{current_dir}\Frontend\Graphics" # Folder for UI images and GIFs
 
+# Automatically create directories if they don't exist
+os.makedirs(TempDirPath, exist_ok=True)
+os.makedirs(GraphicsDirPath, exist_ok=True)
+
 # -------------------------------------------------------------------------------------------------------
 #                                         Helper Functions
 # -------------------------------------------------------------------------------------------------------
@@ -74,9 +78,14 @@ def SetMicrophoneStatus(Command):
 
 def GetMicrophoneStatus():
     """Reads the current microphone status from Mic.data."""
-    with open(rf"{TempDirPath}\Mic.data", "r", encoding="utf-8") as file:
-        Status = file.read().strip()
-    return Status
+    try:
+        with open(rf"{TempDirPath}\Mic.data", "r", encoding="utf-8") as file:
+            Status = file.read().strip()
+        return Status
+    except FileNotFoundError:
+        with open(rf"{TempDirPath}\Mic.data", "w", encoding="utf-8") as file:
+            file.write("False")
+        return "False"
 
 def SetAssistantStatus(Status):
     """Writes the current status of the Assistant (e.g., 'Listening...', 'Thinking...') to Status.data."""
@@ -85,9 +94,14 @@ def SetAssistantStatus(Status):
         
 def GetAssistantStatus():
     """Reads the Assistant's status."""
-    with open(rf"{TempDirPath}\Status.data", "r", encoding="utf-8") as file:
-        Status = file.read()
-    return Status
+    try:
+        with open(rf"{TempDirPath}\Status.data", "r", encoding="utf-8") as file:
+            Status = file.read()
+        return Status
+    except FileNotFoundError:
+        with open(rf"{TempDirPath}\Status.data", "w", encoding="utf-8") as file:
+            file.write("Available...")
+        return "Available..."
 
 def MicButtonInitiated():
     """Triggered when the UI Mic button is clicked to START listening."""
@@ -317,6 +331,9 @@ class ChatSection(QWidget):
                 self.addMessage(message=messages)
                 old_chat_message = messages
         except FileNotFoundError:
+            # Check if file exists, if not create it
+            with open(rf'{TempDirPath}\Responses.data', 'w', encoding='utf-8') as file:
+                file.write("")
             pass
 
     def SpeechRecogText(self):

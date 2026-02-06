@@ -151,11 +151,14 @@ def ShowChatOnGUI():
             with open(TempDirectoryPath('Responses.data'), 'w', encoding='utf-8') as response_file:
                 response_file.write(data)
     except FileNotFoundError:
-        print("Database.data file not found.")
+        print("Database.data file not found. Creating it...")
+        with open(TempDirectoryPath('Database.data'), 'w', encoding='utf-8') as file:
+            file.write("")
 
 def InitialExecution():
     """Boot sequence: Resets Status, checks logs, and pre-loads history to GUI."""
     SetMicrophoneStatus("False")
+    SetAssistantStatus("Available...")
     ShowTextToScreen("")
     ShowDefaultChatIfNoChats()
     ChatLogIntegration()
